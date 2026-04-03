@@ -1,5 +1,8 @@
+
+
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import Editor from "@monaco-editor/react";
 
 export default function Home() {
   const [snippets, setSnippets] = useState([]);
@@ -7,18 +10,27 @@ export default function Home() {
   const [language, setLanguage] = useState("");
   const [tags, setTags] = useState("");
   const [content, setContent] = useState("");
+  const [selectedSnippet, setSelectedSnippet] = useState(null);
 
-  //  LOAD from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("code_snippets_data");
-    if (saved) {
-      setSnippets(JSON.parse(saved));
-    }
-  }, []);
+  
+ const [theme, setTheme] = useState(() => {
+  return localStorage.getItem("editor_theme") || "light";
+});
 
+  // LOAD snippets
+useEffect(() => {
+  const saved = localStorage.getItem("code_snippets_data");
+  if (saved) {
+    setSnippets(JSON.parse(saved));
+  }
+}, []);
 
+//  ADD THIS (theme save)
+useEffect(() => {
+  localStorage.setItem("editor_theme", theme);
+}, [theme]);
 
-  //  CREATE
+  // CREATE
   const createSnippet = () => {
     if (!title) return;
 
@@ -41,12 +53,33 @@ export default function Home() {
     setContent("");
   };
 
-  //  DELETE
+  // DELETE
   const deleteSnippet = (id) => {
     const updated = snippets.filter((s) => s.id !== id);
 
     setSnippets(updated);
     localStorage.setItem("code_snippets_data", JSON.stringify(updated));
+
+    if (selectedSnippet?.id === id) {
+      setSelectedSnippet(null);
+    }
+  };
+
+  // UPDATE CONTENT (EDITOR CHANGE)
+  const handleEditorChange = (value) => {
+    if (!selectedSnippet) return;
+
+    const updated = snippets.map((s) =>
+      s.id === selectedSnippet.id ? { ...s, content: value } : s
+    );
+
+    setSnippets(updated);
+    localStorage.setItem("code_snippets_data", JSON.stringify(updated));
+
+    setSelectedSnippet({
+      ...selectedSnippet,
+      content: value,
+    });
   };
 
   return (
@@ -61,12 +94,23 @@ export default function Home() {
             <p>No snippets yet</p>
           ) : (
             snippets.map((snippet) => (
-              <div key={snippet.id} className="mb-3 p-2 border rounded">
+              <div
+                key={snippet.id}
+                className="mb-3 p-2 border rounded cursor-pointer hover:bg-gray-100"
+                onClick={() => setSelectedSnippet(snippet)}
+              >
                 <p className="font-medium">{snippet.title}</p>
+
+                <p className="text-xs text-gray-500">
+                  {snippet.content?.slice(0, 30)}
+                </p>
 
                 <button
                   data-testid="delete-snippet-button"
-                  onClick={() => deleteSnippet(snippet.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteSnippet(snippet.id);
+                  }}
                   className="text-red-500 text-sm"
                 >
                   Delete
@@ -89,8 +133,12 @@ export default function Home() {
             className="w-1/2 px-4 py-2 border rounded-lg"
           />
 
+          {/* FIXED: Theme toggle */}
           <button
             data-testid="theme-toggle-button"
+            onClick={() =>
+              setTheme(theme === "light" ? "dark" : "light")
+            }
             className="bg-blue-500 text-white px-5 py-2 rounded-lg"
           >
             Toggle Theme
@@ -132,13 +180,19 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Editor */}
+        {/* Monaco Editor */}
         <div className="flex-1 p-6">
           <div
             data-testid="monaco-editor-container"
-            className="bg-white p-4 rounded shadow"
+            className="h-full bg-white rounded shadow"
           >
-            Editor Area
+            <Editor
+              height="100%"
+              language={selectedSnippet?.language || "javascript"}
+              value={selectedSnippet?.content || ""}
+              theme={theme === "light" ? "vs-light" : "vs-dark"} // ✅ THEME FIX
+              onChange={handleEditorChange}
+            />
           </div>
         </div>
 
