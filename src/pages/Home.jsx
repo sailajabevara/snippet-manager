@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Editor from "@monaco-editor/react";
@@ -9,26 +8,25 @@ export default function Home() {
   const [title, setTitle] = useState("");
   const [language, setLanguage] = useState("");
   const [tags, setTags] = useState("");
-  const [content, setContent] = useState("");
   const [selectedSnippet, setSelectedSnippet] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  
- const [theme, setTheme] = useState(() => {
-  return localStorage.getItem("editor_theme") || "light";
-});
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("editor_theme") || "light";
+  });
 
-  // LOAD snippets
-useEffect(() => {
-  const saved = localStorage.getItem("code_snippets_data");
-  if (saved) {
-    setSnippets(JSON.parse(saved));
-  }
-}, []);
+  // LOAD
+  useEffect(() => {
+    const saved = localStorage.getItem("code_snippets_data");
+    if (saved) {
+      setSnippets(JSON.parse(saved));
+    }
+  }, []);
 
-//  ADD THIS (theme save)
-useEffect(() => {
-  localStorage.setItem("editor_theme", theme);
-}, [theme]);
+  // SAVE THEME
+  useEffect(() => {
+    localStorage.setItem("editor_theme", theme);
+  }, [theme]);
 
   // CREATE
   const createSnippet = () => {
@@ -39,24 +37,21 @@ useEffect(() => {
       title,
       language,
       tags: tags.split(","),
-      content,
+      content: "",
     };
 
     const updated = [...snippets, newSnippet];
-
     setSnippets(updated);
     localStorage.setItem("code_snippets_data", JSON.stringify(updated));
 
     setTitle("");
     setLanguage("");
     setTags("");
-    setContent("");
   };
 
   // DELETE
   const deleteSnippet = (id) => {
     const updated = snippets.filter((s) => s.id !== id);
-
     setSnippets(updated);
     localStorage.setItem("code_snippets_data", JSON.stringify(updated));
 
@@ -65,7 +60,7 @@ useEffect(() => {
     }
   };
 
-  // UPDATE CONTENT (EDITOR CHANGE)
+  // UPDATE EDITOR
   const handleEditorChange = (value) => {
     if (!selectedSnippet) return;
 
@@ -82,36 +77,47 @@ useEffect(() => {
     });
   };
 
+  // SEARCH
+  const filteredSnippets = snippets.filter((s) =>
+    s.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // COPY
+  const handleCopy = () => {
+    if (!selectedSnippet) {
+      alert("Select snippet first");
+      return;
+    }
+
+    navigator.clipboard.writeText(selectedSnippet.content || "");
+    alert("Copied!");
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
 
       {/* Sidebar */}
-      <div className="w-1/4 bg-white shadow-md p-5 border-r">
-        <h2 className="text-2xl font-semibold text-gray-800">Snippets</h2>
+      <div className="w-1/4 bg-white p-5 border-r shadow-sm">
+        <h2 className="text-xl font-semibold mb-4">Snippets</h2>
 
-        <div data-testid="snippet-list" className="mt-6 text-gray-600">
-          {snippets.length === 0 ? (
-            <p>No snippets yet</p>
+        <div className="space-y-2">
+          {filteredSnippets.length === 0 ? (
+            <p className="text-gray-500">No snippets</p>
           ) : (
-            snippets.map((snippet) => (
+            filteredSnippets.map((s) => (
               <div
-                key={snippet.id}
-                className="mb-3 p-2 border rounded cursor-pointer hover:bg-gray-100"
-                onClick={() => setSelectedSnippet(snippet)}
+                key={s.id}
+                className="p-3 border rounded cursor-pointer hover:bg-gray-100 transition"
+                onClick={() => setSelectedSnippet(s)}
               >
-                <p className="font-medium">{snippet.title}</p>
-
-                <p className="text-xs text-gray-500">
-                  {snippet.content?.slice(0, 30)}
-                </p>
+                <p className="font-medium">{s.title}</p>
 
                 <button
-                  data-testid="delete-snippet-button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    deleteSnippet(snippet.id);
+                    deleteSnippet(s.id);
                   }}
-                  className="text-red-500 text-sm"
+                  className="text-red-500 text-sm mt-1"
                 >
                   Delete
                 </button>
@@ -121,79 +127,79 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Main Section */}
+      {/* Main */}
       <div className="flex-1 flex flex-col">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white shadow-sm">
+        <div className="flex items-center gap-4 p-4 bg-white shadow-sm">
           <input
-            type="text"
             placeholder="Search snippets..."
-            data-testid="search-input"
-            className="w-1/2 px-4 py-2 border rounded-lg"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border p-2 w-full max-w-xl rounded-lg"
           />
 
-          {/* FIXED: Theme toggle */}
           <button
-            data-testid="theme-toggle-button"
             onClick={() =>
               setTheme(theme === "light" ? "dark" : "light")
             }
-            className="bg-blue-500 text-white px-5 py-2 rounded-lg"
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg"
           >
             Toggle Theme
           </button>
         </div>
 
         {/* Form */}
-        <div className="p-6 bg-white">
+        <div className="p-4 bg-white shadow-sm flex gap-3 flex-wrap">
           <input
-            data-testid="snippet-title-input"
             placeholder="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border p-2 mr-2"
+            className="border p-2 rounded w-full max-w-xs"
           />
 
           <input
-            data-testid="snippet-language-input"
             placeholder="Language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="border p-2 mr-2"
+            className="border p-2 rounded w-full max-w-xs"
           />
 
           <input
-            data-testid="snippet-tags-input"
             placeholder="Tags"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            className="border p-2 mr-2"
+            className="border p-2 rounded w-full max-w-xs"
           />
 
           <button
-            data-testid="save-snippet-button"
             onClick={createSnippet}
-            className="bg-green-500 text-white px-4 py-2"
+            className="bg-green-500 text-white px-4 py-2 rounded"
           >
             Save
           </button>
         </div>
 
-        {/* Monaco Editor */}
-        <div className="flex-1 p-6">
-          <div
-            data-testid="monaco-editor-container"
-            className="h-full bg-white rounded shadow"
+        {/* Editor */}
+        <div className="flex-1 p-4 bg-white flex flex-col">
+
+          <button
+            onClick={handleCopy}
+            className="bg-green-500 text-white px-4 py-2 mb-2 w-fit rounded"
           >
+            Copy Code
+          </button>
+
+          <div className="flex-1 border rounded overflow-hidden">
             <Editor
               height="100%"
               language={selectedSnippet?.language || "javascript"}
               value={selectedSnippet?.content || ""}
-              theme={theme === "light" ? "vs-light" : "vs-dark"} // ✅ THEME FIX
+              theme={theme === "light" ? "vs-light" : "vs-dark"}
               onChange={handleEditorChange}
             />
           </div>
+
         </div>
 
       </div>
