@@ -79,10 +79,14 @@ export default function Home() {
   };
 
   // SEARCH
-  const filteredSnippets = snippets.filter((s) =>
-    s.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSnippets = snippets.filter((s) => {
+  const term = searchTerm.toLowerCase();
 
+  return (
+    s.title.toLowerCase().includes(term) ||
+    s.tags.some((tag) => tag.toLowerCase().includes(term))
+  );
+});
   // COPY
   const handleCopy = async () => {
     if (!selectedSnippet) {
