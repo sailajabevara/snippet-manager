@@ -10,6 +10,7 @@ export default function Home() {
   const [tags, setTags] = useState("");
   const [selectedSnippet, setSelectedSnippet] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [gistUrl, setGistUrl] = useState("");
 
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("editor_theme") || "light";
@@ -83,114 +84,221 @@ export default function Home() {
   );
 
   // COPY
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (!selectedSnippet) {
       alert("Select snippet first");
       return;
     }
 
-    navigator.clipboard.writeText(selectedSnippet.content || "");
+    await navigator.clipboard.writeText(selectedSnippet.content || "");
     alert("Copied!");
   };
+
+   const exportToGist = async () => {
+  if (!selectedSnippet) {
+    alert("Select snippet first");
+    return;
+  }
+
+  try {
+    const token = import.meta.env.VITE_GITHUB_TOKEN;
+
+    if (!token) {
+      alert("Token missing (.env check)");
+      return;
+    }
+
+    const response = await fetch("https://api.github.com/gists", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, //  FINAL FIX
+      },
+      body: JSON.stringify({
+        description: selectedSnippet.title || "Snippet",
+        public: true,
+        files: {
+          [`${selectedSnippet.title || "snippet"}.js`]: {
+            content: selectedSnippet.content || "",
+          },
+        },
+      }),
+    });
+
+    const data = await response.json();
+
+    console.log("GIST RESPONSE:", data);
+
+    if (data.html_url) {
+      alert("Gist created: " + data.html_url);
+    } else {
+      alert("Error creating gist");
+    }
+  } catch (error) {
+    console.error(error);
+    alert("Error creating gist");
+  }
+};
+const importGist = async () => {
+  try {
+    if (!gistUrl) {
+      alert("Paste Gist URL");
+      return;
+    }
+
+    //  extract gist id (strong fix)
+    const parts = gistUrl.split("/");
+    const gistId = parts[parts.length - 1];
+
+    if (!gistId) {
+      alert("Invalid Gist URL");
+      return;
+    }
+
+    const res = await fetch(`https://api.github.com/gists/${gistId}`);
+    const data = await res.json();
+
+    console.log("IMPORT RESPONSE:", data); // debug
+
+    if (!data.files) {
+      alert("Invalid Gist Data");
+      return;
+    }
+
+    const file = Object.values(data.files)[0];
+
+    const newSnippet = {
+      id: uuidv4(),
+      title: file.filename || "Imported Snippet",
+      language: "javascript",
+      tags: [],
+      content: file.content || "",
+    };
+
+    const updated = [...snippets, newSnippet];
+    setSnippets(updated);
+    localStorage.setItem("code_snippets_data", JSON.stringify(updated));
+
+    alert("Imported successfully!");
+  } catch (err) {
+    console.error(err);
+    alert("Error importing gist");
+  }
+};
 
   return (
     <div className="flex h-screen bg-gray-100">
 
       {/* Sidebar */}
-      <div className="w-1/4 bg-white p-5 border-r shadow-sm">
+      <div className="w-1/4 bg-white p-5 border-r">
         <h2 className="text-xl font-semibold mb-4">Snippets</h2>
 
-        <div className="space-y-2">
-          {filteredSnippets.length === 0 ? (
-            <p className="text-gray-500">No snippets</p>
-          ) : (
-            filteredSnippets.map((s) => (
-              <div
-                key={s.id}
-                className="p-3 border rounded cursor-pointer hover:bg-gray-100 transition"
-                onClick={() => setSelectedSnippet(s)}
-              >
-                <p className="font-medium">{s.title}</p>
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteSnippet(s.id);
-                  }}
-                  className="text-red-500 text-sm mt-1"
-                >
-                  Delete
-                </button>
-              </div>
-            ))
-          )}
-        </div>
+        {filteredSnippets.map((s) => (
+          <div
+            key={s.id}
+            className="p-2 border mb-2 cursor-pointer"
+            onClick={() => setSelectedSnippet(s)}
+          >
+            {s.title}
+            <br />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                deleteSnippet(s.id);
+              }}
+              className="text-red-500 text-sm"
+            >
+              Delete
+            </button>
+          </div>
+        ))}
       </div>
 
       {/* Main */}
       <div className="flex-1 flex flex-col">
 
         {/* Header */}
-        <div className="flex items-center gap-4 p-4 bg-white shadow-sm">
+        <div className="p-4 bg-white flex gap-3">
           <input
-            placeholder="Search snippets..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 w-full max-w-xl rounded-lg"
+            className="border p-2 w-full"
           />
 
           <button
             onClick={() =>
               setTheme(theme === "light" ? "dark" : "light")
             }
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+            className="bg-blue-500 text-white px-3"
           >
             Toggle Theme
           </button>
         </div>
 
         {/* Form */}
-        <div className="p-4 bg-white shadow-sm flex gap-3 flex-wrap">
+        <div className="p-4 bg-white flex gap-2">
           <input
             placeholder="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="border p-2 rounded w-full max-w-xs"
+            className="border p-2"
           />
-
           <input
             placeholder="Language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="border p-2 rounded w-full max-w-xs"
+            className="border p-2"
           />
-
           <input
             placeholder="Tags"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            className="border p-2 rounded w-full max-w-xs"
+            className="border p-2"
           />
 
           <button
             onClick={createSnippet}
-            className="bg-green-500 text-white px-4 py-2 rounded"
+            className="bg-green-500 text-white px-3"
           >
             Save
+          </button>
+
+          <input
+            placeholder="Paste Gist URL"
+            value={gistUrl}
+            onChange={(e) => setGistUrl(e.target.value)}
+            className="border p-2"
+          />
+
+          <button
+            onClick={importGist}
+            className="bg-purple-500 text-white px-3"
+          >
+            Import Gist
           </button>
         </div>
 
         {/* Editor */}
         <div className="flex-1 p-4 bg-white flex flex-col">
 
-          <button
-            onClick={handleCopy}
-            className="bg-green-500 text-white px-4 py-2 mb-2 w-fit rounded"
-          >
-            Copy Code
-          </button>
+          <div className="flex gap-2 mb-2">
+            <button
+              onClick={handleCopy}
+              className="bg-green-500 text-white px-3"
+            >
+              Copy Code
+            </button>
 
-          <div className="flex-1 border rounded overflow-hidden">
+            <button
+              onClick={exportToGist}
+              className="bg-purple-500 text-white px-3"
+            >
+              Export Gist
+            </button>
+          </div>
+
+          <div className="flex-1 border">
             <Editor
               height="100%"
               language={selectedSnippet?.language || "javascript"}
