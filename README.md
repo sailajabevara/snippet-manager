@@ -1,16 +1,133 @@
-# React + Vite
+# 🚀 Code Snippet Manager
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-featured **Code Snippet Manager** built with React and Monaco Editor. This application allows users to create, manage, and share code snippets efficiently with GitHub Gist integration, backup & restore functionality, and Docker support.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+##  Features
 
-## React Compiler
+- ✨ Create, edit, and delete code snippets  
+- 🧠 Monaco Editor (VS Code-like experience)  
+- 🔍 Search snippets instantly  
+- 📋 Copy code to clipboard  
+- 🌗 Light/Dark theme toggle  
+- 🌐 GitHub Gist Integration  
+  - Export snippets as Gists  
+  - Import snippets using Gist URL  
+- 💾 Backup & Restore (Download & Upload JSON)  
+- 🧭 Routing with React Router  
+- 🐳 Docker support  
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React (Vite)
+- Tailwind CSS
+- Monaco Editor
+- GitHub Gist API
+- Docker & Docker Compose
+
+---
+
+## 📦 Installation (Local Setup)
+
+```bash
+git clone https://github.com/your-username/snippet-manager.git
+cd snippet-manager
+npm install
+npm run dev
+```
+
+---
+
+## 🔑 Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+VITE_GITHUB_TOKEN=your_github_personal_access_token
+```
+
+> This token is required for GitHub Gist import/export functionality.
+
+---
+
+## 🐳 Run with Docker
+
+```bash
+docker-compose up --build
+```
+
+Open in browser:
+
+```
+http://localhost:5173
+```
+
+---
+
+## 🌍 Live Demo
+
+👉 https://your-vercel-link.vercel.app
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+ ├── pages/
+ │   ├── Home.jsx
+ │   └── ViewSnippet.jsx
+ ├── hooks/
+ │   └── useSnippets.js
+ ├── App.jsx
+ ├── main.jsx
+```
+
+---
+
+## 🚀 Deployment
+
+Deployed using **Vercel**
+
+Steps:
+1. Connect GitHub repository
+2. Add Environment Variable:
+   VITE_GITHUB_TOKEN=your_token
+3. Click Deploy
+
+---
+
+## 💡 Key Functionalities
+
+- Snippets stored in localStorage  
+- Real-time editing using Monaco Editor  
+- GitHub Gist API integration  
+- Backup & restore using JSON files  
+- Responsive UI with Tailwind CSS  
+
+---
+
+## 🎯 Future Improvements
+
+- User authentication  
+- Cloud storage (MongoDB / Firebase)  
+- Snippet sharing via links  
+- Advanced filtering & tags UI  
+
+---
+
+## 🧠 Author
+
+**Sailaja**
+
+---
+
+## ⭐ Acknowledgements
+
+- Monaco Editor  
+- GitHub API  
+- Vercel  
+- Docker  
