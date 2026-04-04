@@ -67,9 +67,6 @@ http://localhost:5173
 
 ---
 
-## 🌍 Live Demo
-
-👉 https://your-vercel-link.vercel.app
 
 ---
 
@@ -88,15 +85,6 @@ src/
 
 ---
 
-## 🚀 Deployment
-
-Deployed using **Vercel**
-
-Steps:
-1. Connect GitHub repository
-2. Add Environment Variable:
-   VITE_GITHUB_TOKEN=your_token
-3. Click Deploy
 
 ---
 
